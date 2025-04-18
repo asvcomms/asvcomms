@@ -1,68 +1,58 @@
-// chat.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { app } from './firebase-config.js';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  serverTimestamp,
+  query,
+  orderBy
+} from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-// Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyC0VCn8OkSc-y8T5mJFhf-dP_lG8JyOq_g",
-  authDomain: "asv-comms.firebaseapp.com",
-  projectId: "asv-comms",
-  storageBucket: "asv-comms.firebasestorage.app",
-  messagingSenderId: "96571461160",
-  appId: "1:96571461160:web:04b5311b12f5eaaea76f1d",
-  measurementId: "G-WBVBZQSH3H"
-};
-
-// Init Firebase
-const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const messagesRef = collection(db, "messages");
 
-// DOM refs
-const chatForm = document.getElementById('chat-form');
-const chatInput = document.getElementById('chat-input');
-const chatContainer = document.getElementById('chat-container');
-
-// Encryption key
-const encryptionKey = 'asv-secret';
-
-// XOR encryption/decryption function
-function xorEncryptDecrypt(text, key) {
-  let output = '';
-  for (let i = 0; i < text.length; i++) {
-    output += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
-  }
-  return output;
+// Simple XOR encryption
+function encrypt(text, key = "asvkey") {
+  return Array.from(text).map((char, i) =>
+    String.fromCharCode(char.charCodeAt(0) ^ key.charCodeAt(i % key.length))
+  ).join('');
 }
 
-// Firestore collection
-const messagesRef = collection(db, 'messages');
+function decrypt(text, key = "asvkey") {
+  return encrypt(text, key); // XOR decrypts same way
+}
 
 // Send message
-chatForm.addEventListener('submit', async (e) => {
+document.getElementById("chat-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const text = chatInput.value.trim();
-  if (text !== '') {
-    const encrypted = xorEncryptDecrypt(text, encryptionKey);
+  const input = document.getElementById("chat-input");
+  const rawMsg = input.value.trim();
+
+  if (rawMsg !== "") {
+    const encryptedMsg = encrypt(rawMsg);
     await addDoc(messagesRef, {
-      text: encrypted,
-      timestamp: serverTimestamp()
+      text: encryptedMsg,
+      createdAt: serverTimestamp()
     });
-    chatInput.value = '';
+    input.value = "";
   }
 });
 
-// Load messages
-const q = query(messagesRef, orderBy('timestamp'));
-onSnapshot(q, (snapshot) => {
-  chatContainer.innerHTML = '';
-  snapshot.forEach((doc) => {
-    const msg = doc.data();
-    const decrypted = xorEncryptDecrypt(msg.text, encryptionKey);
-    const msgEl = document.createElement('div');
-    msgEl.className = 'chat-message';
-    msgEl.textContent = decrypted;
-    chatContainer.appendChild(msgEl);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  });
-});
+// Listen for new messages
+const chatContainer = document.getElementById("chat-container");
 
+onSnapshot(query(messagesRef, orderBy("createdAt")), (snapshot) => {
+  chatContainer.innerHTML = ""; // Clear before re-rendering
+  snapshot.forEach((doc) => {
+    const msgData = doc.data();
+    const decryptedMsg = decrypt(msgData.text);
+    const div = document.createElement("div");
+    div.className = "chat-message";
+    div.textContent = decryptedMsg;
+    chatContainer.appendChild(div);
+  });
+
+  // Scroll to latest
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+});
