@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ASV COMMS</title>
+  <link rel="icon" href="favicon.png" type="image/x-icon">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <meta name="theme-color" content="#ffffff" />
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>Asv<span>Comms</span></h1>
+      <p class="subtitle">Temporary chat for ASV gang</p>
+    </header>
+
+    <section class="chat-container" id="chat-container">
+      <!-- Messages will go here -->
+    </section>
+
+    <form id="chat-form" class="chat-form">
+      <input type="text" id="chat-input" placeholder="Type something..." autocomplete="off" />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  <script type="module" src="firebase-config.js"></script>
+
+  <script type="module" src="chat.js"></script>
+</body>
+</html>
+
